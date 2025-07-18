@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "path": ".cfs"
+    },
+    {
+      "path": "m33"
+    }
+  ],
+  "settings": {
+    "cfs.configureWorkspace": "Yes",
+    "terminal.integrated.defaultProfile.windows": "CFS Terminal",
+    "terminal.integrated.defaultProfile.osx": "CFS Terminal",
+    "terminal.integrated.defaultProfile.linux": "CFS Terminal",
+    "files.associations": {
+      "kernel.h": "c",
+      "idle.h": "c",
+      "sem.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": false
+  }
+}
