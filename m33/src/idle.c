@@ -1,30 +1,30 @@
 #include "idle.h"
 
-LOG_MODULE_REGISTER(my_idle, LOG_LEVEL_DBG);
-
-#define IDLE_THREAD_PRIO		4
+#define IDLE_THREAD_PRIO		3
 #define IDLE_THREAD_STACK_SIZE  1024
 struct k_thread IDLE_thread;
 K_THREAD_STACK_DEFINE(IDLE_stack, IDLE_THREAD_STACK_SIZE);
 
 static void set_pwr_mode(pwr_mode_t new_mode)
 {
+	// SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+
 	switch (new_mode)
 	{
-		case PWR_SLEEP:
-			LOG_INF("Entering SLEEP mode!");
+		case SLEEP:
+			printk("Entering SLEEP mode!\n");
             NOPs(10000);
 
 			Wrap_MXC_LP_EnterMicroPowerMode();
 			break;
-		case PWR_STANDBY:
-			LOG_INF("Entering STANDBY mode!");
+		case STANDBY:
+			printk("Entering STANDBY mode!\n");
 			NOPs(10000);
 
 			Wrap_MXC_LP_EnterStandbyMode();
 			break;
-		case PWR_BACKUP:
-			LOG_INF("Entering BACKUP mode!");
+		case BACKUP:
+			printk("Entering BACKUP mode!\n");
 			NOPs(10000);
 
 			Wrap_MXC_LP_EnterBackupMode();
@@ -32,15 +32,17 @@ static void set_pwr_mode(pwr_mode_t new_mode)
 		default: break;
 	}
 
-    LOG_INF("In ACTIVE mode!");
+	// SysTick->CTRL |= ~SysTick_CTRL_TICKINT_Msk;
+    printk("In ACTIVE mode!\n");
 }
 
 static void idle_main(void *p1,void *p2,void *p3)
 {
+	printk("In idle_main!\n");
     while (1)
     {
         k_sem_take(&accel_inactive_sem, K_FOREVER);
-		set_pwr_mode(PWR_STANDBY);
+		set_pwr_mode(STANDBY);
     }
 }
 

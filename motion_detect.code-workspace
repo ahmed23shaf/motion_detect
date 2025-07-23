@@ -15,7 +15,8 @@
     "files.associations": {
       "kernel.h": "c",
       "idle.h": "c",
-      "sem.h": "c"
+      "sem.h": "c",
+      "accel.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
   }

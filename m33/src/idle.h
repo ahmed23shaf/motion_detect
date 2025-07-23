@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/logging/log.h>
 
 #include <wrap_max32_lp.h>
 
@@ -19,10 +18,10 @@
     } while (0)
 
 typedef enum {
-    PWR_ACTIVE,
-	PWR_SLEEP,
-	PWR_STANDBY,
-	PWR_BACKUP
+    ACTIVE,
+	SLEEP,
+	STANDBY,
+	BACKUP
 } pwr_mode_t;
 
 void idle_init(void);

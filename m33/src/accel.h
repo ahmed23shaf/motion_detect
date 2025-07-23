@@ -7,10 +7,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
-#include <zephyr/logging/log.h>
 
 #include <wrap_max32_wut.h>
 #include <wrap_max32_sys.h>
+#include <wrap_max32_lp.h>
 
 #include "i2c.h"
 #include "sem.h"
@@ -21,7 +21,7 @@
 #define THRESH_ACT_MG     50
 #define THRESH_INACT_MG   400
 
-#define TIMER_INACT       (uint8_t)20    // # of samples below threshold that causes inactivity event
+#define TIMER_INACT       (uint8_t)250    // # of samples below threshold that causes inactivity event
 
 // Macros for writing into THRESHOLD registers
 #define THRESH_LSB(THRESH)  ((uint16_t)(THRESH / 0.25)) // 0.25 is the +/- 2g scale factor defined below
@@ -32,26 +32,21 @@
 #define INT1_NODE DT_ALIAS(p8)
 static const struct gpio_dt_spec int1 = GPIO_DT_SPEC_GET_OR(INT1_NODE, gpios, {0});
 
+/* LED */
+#define LED0_NODE DT_ALIAS(led0)
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+
 typedef struct {
     int16_t x;
     int16_t y;
     int16_t z;
 } accel_pkt;
 
-typedef enum {
-    ACCEL_MEASUREMENT,
-    ACCEL_WAKEUP,
-    ACCEL_STANDBY
-} accel_mode_t;
-
 extern struct k_msgq accel_msgq;
 
 int          accel_init(void);
 void         set_accel_val(accel_pkt *dest);
 void         accel_update(void);
-
-accel_mode_t accel_get_mode(void);
-int          accel_set_mode(accel_mode_t new_mode);
 
 /* Registers */
 #define ADXL367_REG_DEVID_AD 0x00
