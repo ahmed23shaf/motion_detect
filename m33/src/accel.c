@@ -1,7 +1,5 @@
 #include "accel.h"
 
-static struct gpio_callback int1_data;
-
 #define ACCEL_THREAD_PRIO		 3
 #define ACCEL_THREAD_STACK_SIZE 2048
 struct k_thread ACCEL_thread;
@@ -16,34 +14,6 @@ static struct k_work accel_work;
 
 static accel_pkt accel[SAMPLE_SETS];
 static uint8_t   accel_raw_fifo[SAMPLE_FIFO_LEN]; // 6 bytes per each X,Y,Z set
-
-// Shares interrupt lines of FIFO watermark, activity, and inactiviy detection
-static void accel_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
-{
-    MXC_LP_ClearWakeStatus();
-    uint8_t status;
-    i2c_read_reg(ADXL367_REG_STATUS, &status);
-
-	if (status & ADXL367_STATUS_FIFO_WATERMARK)
-		while (gpio_pin_get_dt(&int1))
-			i2c_multi_read(ADXL367_REG_I2C_FIFO_DATA, accel_raw_fifo, SAMPLE_FIFO_LEN);
-
-	if (status & ADXL367_STATUS_AWAKE)
-	{
-		gpio_pin_set_dt(&led, 1);
-
-		i2c_write_reg(ADXL367_REG_INTMAP1_LOWER, ADXL367_INTMAP1_LOWER_INACT_INT1 | ADXL367_INTMAP1_LOWER_FIFO_WATERMARK_INT1);
-		k_sem_give(&accel_fifo_sem);
-	}
-	else
-	{
-		gpio_pin_set_dt(&led, 0);
-
-		i2c_write_reg(ADXL367_REG_INTMAP1_LOWER, ADXL367_INTMAP1_LOWER_ACT_INT1);
-		k_sem_give(&accel_inactive_sem);
-	}
-    printk("In accel_isr\n");
-}
 
 static void accel_wake_handler(void)
 {
@@ -83,21 +53,21 @@ void set_accel_val(accel_pkt *dest)
     memcpy(dest, accel, sizeof(accel));
 }
 
-static int twos_complement(unsigned int val, int num_bits)
-{
-    int value  = (int)val;
+// static int twos_complement(unsigned int val, int num_bits)
+// {
+//     int value  = (int)val;
 
-    if (value & (1 << (num_bits-1)))
-       value -= 1 << num_bits;
+//     if (value & (1 << (num_bits-1)))
+//        value -= 1 << num_bits;
 
-    return value;
-}
+//     return value;
+// }
 
-static int16_t decode_accel_axis(uint8_t msb, uint8_t lsb)
-{
-    uint16_t value = ((msb << 8) | lsb) & 0x3FFF;
-    return twos_complement(value, 14); // 14-bit axis resolution
-}
+// static int16_t decode_accel_axis(uint8_t msb, uint8_t lsb)
+// {
+//     uint16_t value = ((msb << 8) | lsb) & 0x3FFF;
+//     return twos_complement(value, 14); // 14-bit axis resolution
+// }
 
 static void accel_main(void *p1, void *p2, void *p3)
 {
@@ -145,14 +115,6 @@ static int int1_init(void)
 		return err;
 	}
 
-	gpio_init_callback(&int1_data, accel_isr, BIT(int1.pin));
-
-	err = gpio_add_callback(int1.port, &int1_data);
-	if (err) {
-		printk("Failed to add GPIO callback\n");
-		return err;
-	}
-
     // Set GPIO pin as global wake-up source
     mxc_gpio_cfg_t init1_cfg = {
         .port = MXC_GPIO0,
@@ -160,13 +122,6 @@ static int int1_init(void)
     };
     
     Wrap_MXC_LP_EnableGPIOWakeup(&init1_cfg);
-
-    // err = gpio_pin_interrupt_configure_dt(&int1, GPIO_INT_EDGE_RISING); // enable IRQ line
-	// if (err) {
-	// 	printk("Failed to configure interrupt on %s pin %d\n", int1.port->name,
-	// 		int1.pin);
-	// 	return err;
-	// }
 
 	return 0;
 }
